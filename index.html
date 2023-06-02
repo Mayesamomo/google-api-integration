@@ -8,81 +8,88 @@
     <title>Static Map API</title>
     <style>
         body {
-            text-align: center;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            font-family: Arial, sans-serif;
         }
 
         .main {
-            margin-top: 20px;
+            text-align: center;
+            margin-bottom: 20px;
         }
 
         #result {
-            margin-top: 20px;
+            text-align: center;
         }
     </style>
 </head>
 
 <body>
-    <h1>Humber College</h1>
     <div class="main">
+        <h1>Humber College</h1>
         <input type="text" id="address" value="205 Humber College, Toronto, ON, CA">
         <input type="button" id="submit" value="Submit">
     </div>
     <div id="result"></div>
 
+    <script src="keys.js"></script>
     <script>
-        function getStaticMap(address) {
-            let key = "AIzaSyA5FTte-kqVbT0Wzo2QRmieBA4tuOe1cLM";
-            let url = "https://maps.googleapis.com/maps/api/geocode/json?address=" +
-                address + "&key=" + key;
+        function initMap() {
+            const addressInput = document.getElementById("address");
+            const submitButton = document.getElementById("submit");
+            const resultsDiv = document.getElementById("result");
 
-            fetch(url)
-                .then((resp) => resp.json())
-                .then(function (data) {
-                    console.log(data);
+            submitButton.addEventListener("click", function () {
+                const address = addressInput.value;
+                const geocodeKey = geocodeAPIKey; // Reference the geocode API key from keys.js
+                const mapsKey = mapsAPIKey; // Reference the maps API key from keys.js
 
-                    let lat = data.results[0].geometry.location.lat;
-                    let lng = data.results[0].geometry.location.lng;
-                    let placeId = data.results[0].place_id;
-                    let formatedAddress = data.results[0].formatted_address;
-                    let staticMapUrl = "https://maps.googleapis.com/maps/api/staticmap?center=" +
-                        lat + "," +
-                        lng +
-                        "&zoom=15&size=800x400" +
-                        "&markers=color:red|" +
-                        lat +
-                        "," +
-                        lng +
-                        "&key=" +
-                        key;
+                if (address && geocodeKey && mapsKey) {
+                    const geocodeUrl =
+                        `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${encodeURIComponent(geocodeKey)}`;
 
-                    displayResult(lat, lng, placeId, formatedAddress, staticMapUrl);
-                })
-                .catch(function (error) {
-                    console.log(error);
-                });
+                    fetch(geocodeUrl)
+                        .then((resp) => resp.json())
+                        .then(function (data) {
+                            console.log(data);
+
+                            if (data.results.length > 0) {
+                                const location = data.results[0].geometry.location;
+                                const lat = location.lat;
+                                const lng = location.lng;
+                                const placeId = data.results[0].place_id;
+                                const formattedAddress = data.results[0].formatted_address;
+                                const staticMapUrl =
+                                    `https://maps.googleapis.com/maps/api/staticmap?center=${encodeURIComponent(
+                                        lat + "," + lng
+                                    )}&zoom=15&size=800x400&markers=color:red|${encodeURIComponent(
+                                        lat + "," + lng
+                                    )}&key=${encodeURIComponent(mapsKey)}`;
+
+                                resultsDiv.innerHTML = `Coords: ${lat}, ${lng}<br>
+                                    Place ID: ${placeId}<br>
+                                    Address: ${formattedAddress}<br>
+                                    <img src="${staticMapUrl}">`;
+                            } else {
+                                resultsDiv.innerHTML = "No results found.";
+                            }
+                        })
+                        .catch(function (error) {
+                            console.log(error);
+                            resultsDiv.innerHTML = "An error occurred.";
+                        });
+                } else {
+                    resultsDiv.innerHTML = "Please provide an address and API keys.";
+                }
+            });
         }
 
-        function displayResult(lat, lng, placeId, formatedAddress, staticMapUrl) {
-            let result = document.getElementById("result");
-
-            result.innerHTML = "Coords: " +
-                lat + "," + lng +
-                "<br>" +
-                "Place Id: " + placeId +
-                "<br>" +
-                "Address: " + formatedAddress +
-                "<br>" +
-                "<img src ='" +
-                staticMapUrl +
-                "'>";
-        }
-
-        document.getElementById("submit").addEventListener("click", function () {
-            let addressInput = document.getElementById("address");
-            let address = addressInput.value;
-            getStaticMap(address);
-        });
+        // Call the function when the page finishes loading
+        window.addEventListener("load", initMap);
     </script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_MAPS_API_KEY&callback=initMap" async defer></script>
 </body>
 
 </html>
